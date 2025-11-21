@@ -1,0 +1,32 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+venv/
+.venv
+
+# Environment
+.env
+.env.local
+
+# VS Code - ignore user-specific, keep shared config
+.vscode/*
+
+# Chainlit
+.chainlit/
+.files/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+.cccrc
+.claude
+CLAUDE.md
