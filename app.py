@@ -23,11 +23,20 @@ async def on_message(message: cl.Message):
     response_message = cl.Message(content="")
     await response_message.send()
 
-    # Invoke the graph
-    result = await graph.ainvoke(state)
+    # Debug
+    async with cl.Step(name="🔧 Debug Info") as step:
+        result = await graph.ainvoke(state)
+        ai_message = result["messages"][-1]
 
-    # Extract the AI response
-    ai_message = result["messages"][-1]
+        usage = ai_message.response_metadata.get("token_usage", {})
+        prompt_tokens = usage.get("prompt_tokens", 0)
+        completion_tokens = usage.get("completion_tokens", 0)
+
+        step.output = (
+            f"Tokens: {prompt_tokens} prompt + {completion_tokens} completion"
+        )
+
+    # Update response
     response_message.content = ai_message.content
     await response_message.update()
 
