@@ -44,6 +44,30 @@ Open `http://localhost:8000` in your browser.
 └── config.py    # Settings management
 ```
 
+## Graph Architecture
+
+<!-- GRAPH:START -->
+```mermaid
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	chatbot(chatbot)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> chatbot;
+	chatbot --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+
+```
+<!-- GRAPH:END -->
+
+To regenerate the diagram run `uv run python graph.py`.
+
 ## Requirements
 
 - Python 3.11+

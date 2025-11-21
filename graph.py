@@ -35,3 +35,23 @@ def create_graph():
 
 # Singleton graph instance
 graph = create_graph()
+
+
+if __name__ == "__main__":
+    """Generate mermaid diagram and update README.md."""
+    import re
+
+    mermaid_code = graph.get_graph().draw_mermaid()
+    diagram = f"```mermaid\n{mermaid_code}\n```"
+
+    with open("README.md", "r") as f:
+        readme = f.read()
+
+    pattern = r"(<!-- GRAPH:START -->).*?(<!-- GRAPH:END -->)"
+    replacement = rf"\1\n{diagram}\n\2"
+    readme = re.sub(pattern, replacement, readme, flags=re.DOTALL)
+
+    with open("README.md", "w") as f:
+        f.write(readme)
+
+    print("Graph diagram updated in README.md")
