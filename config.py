@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     # Format: {"server_name": {"command": "...", "args": [...], "transport": "stdio"}}
     mcp_servers: str = "{}"
 
+    # User authentication as JSON string
+    # Format: {"username": "bcrypt_hash", ...}
+    auth_users: str = "{}"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
@@ -29,6 +33,36 @@ class Settings(BaseSettings):
             return json.loads(self.mcp_servers)
         except json.JSONDecodeError:
             return {}
+
+    def get_auth_users(self) -> dict[str, str]:
+        """Parse user authentication from JSON string.
+
+        Supports both plain bcrypt hashes and base64-encoded hashes.
+        Use base64 encoding to avoid $ interpretation in Docker env files.
+
+        Returns:
+            Dict mapping username to bcrypt password hash.
+        """
+        import base64
+
+        try:
+            users = json.loads(self.auth_users)
+        except json.JSONDecodeError:
+            return {}
+
+        # Decode base64 hashes if needed (base64 hashes don't start with $)
+        decoded = {}
+        for username, hash_value in users.items():
+            if hash_value.startswith("$"):
+                # Plain bcrypt hash
+                decoded[username] = hash_value
+            else:
+                # Base64 encoded hash
+                try:
+                    decoded[username] = base64.b64decode(hash_value).decode("utf-8")
+                except Exception:
+                    decoded[username] = hash_value
+        return decoded
 
 
 @lru_cache

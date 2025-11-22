@@ -1,11 +1,43 @@
 """Main Chainlit application entry point."""
 
+import logging
+
+import bcrypt
 import chainlit as cl
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 
+from config import get_settings
 from graph import create_graph
 from state import AgentState
 from tools import get_tools
+
+logger = logging.getLogger(__name__)
+
+
+@cl.password_auth_callback
+def auth_callback(username: str, password: str) -> cl.User | None:
+    """Authenticate user against AUTH_USERS from .env."""
+    users = get_settings().get_auth_users()
+    logger.info(f"Auth attempt for user: {username}, configured users: {list(users.keys())}")
+
+    if not users:
+        logger.info("No users configured - allowing anonymous access")
+        return cl.User(identifier="anonymous", metadata={"role": "user"})
+
+    if username not in users:
+        logger.warning(f"User {username} not found")
+        return None
+
+    stored_hash = users[username]
+    try:
+        if bcrypt.checkpw(password.encode("utf-8"), stored_hash.encode("utf-8")):
+            logger.info(f"User {username} authenticated successfully")
+            return cl.User(identifier=username, metadata={"role": "user"})
+    except Exception as e:
+        logger.error(f"Password check failed: {e}")
+
+    logger.warning(f"Invalid password for user {username}")
+    return None
 
 
 def extract_tool_calls(messages: list) -> list[dict]:
