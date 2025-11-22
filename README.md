@@ -6,23 +6,21 @@ This project demonstrates how to create a working web-based AI chat interface wi
 
 ## Features
 
+- AI agent with MCP (Model Context Protocol) tool support
+- Configurable MCP servers via environment variables
+- ABRA Gen API tools (firms, invoices, products, custom queries)
 - Web chat interface with conversation history
-- Streaming-ready architecture using LangGraph
 - Easy model switching via configuration
-- Clean, extensible codebase
 
 ## Quick Start
 
 ```bash
-# Install dependencies
-uv sync
-
 # Configure
 cp .env.example .env
-# Edit .env and set your OPENROUTER_API_KEY
+# Edit .env and set your API keys
 
 # Run
-chainlit run app.py
+./run.sh
 ```
 
 Open `http://localhost:8000` in your browser.
@@ -34,14 +32,25 @@ Open `http://localhost:8000` in your browser.
 | `OPENROUTER_API_KEY` | Your OpenRouter API key | (required) |
 | `MODEL_NAME` | LLM model to use | `anthropic/claude-3.5-sonnet` |
 | `TEMPERATURE` | Response randomness | `0.7` |
+| `MCP_SERVERS` | MCP servers config (JSON) | `{}` |
+| `ABRA_HOST` | ABRA Gen API URL | `http://localhost:699` |
+| `ABRA_DATABASE` | Database name | `Demo` |
+| `ABRA_USERNAME` | API username | (required) |
+| `ABRA_PASSWORD` | API password | (required) |
 
 ## Project Structure
 
 ```
-├── app.py       # Chainlit UI handlers
-├── graph.py     # LangGraph conversation flow
-├── state.py     # Conversation state definition
-└── config.py    # Settings management
+├── app.py           # Chainlit UI handlers
+├── graph.py         # LangGraph agent definition
+├── state.py         # Agent state definition
+├── tools.py         # MCP client (loads tools from MCP servers)
+├── config.py        # Settings management
+└── abra_mcp/        # ABRA Gen MCP server
+    ├── server.py    # MCP server (stdin/stdout)
+    ├── client.py    # HTTP client for ABRA API
+    ├── tools.py     # MCP tool definitions
+    └── config.py    # ABRA configuration
 ```
 
 ## Graph Architecture
@@ -55,10 +64,13 @@ config:
 ---
 graph TD;
 	__start__([<p>__start__</p>]):::first
-	chatbot(chatbot)
+	agent(agent)
+	tools(tools)
 	__end__([<p>__end__</p>]):::last
-	__start__ --> chatbot;
-	chatbot --> __end__;
+	__start__ --> agent;
+	agent -.-> __end__;
+	agent -.-> tools;
+	tools --> agent;
 	classDef default fill:#f2f0ff,line-height:1.2
 	classDef first fill-opacity:0
 	classDef last fill:#bfb6fc
@@ -68,7 +80,38 @@ graph TD;
 
 To regenerate the diagram run `uv run python graph.py`.
 
+## Available Tools
+
+The AI agent has access to these ABRA Gen tools:
+
+| Tool | Description |
+|------|-------------|
+| `abra_query` | Flexible query on any business object collection |
+| `abra_get_resource` | Get specific resource by ID |
+| `abra_list_firms` | List firms/customers with search |
+| `abra_list_invoices` | List invoices with date filtering |
+| `abra_list_products` | List products/store cards with search |
+
+## Adding MCP Servers
+
+To add a new MCP server, update `MCP_SERVERS` in `.env`:
+
+```bash
+# Single server
+MCP_SERVERS={"abra": {"command": "uv", "args": ["run", "python", "-m", "abra_mcp.server"], "transport": "stdio"}}
+
+# Multiple servers
+MCP_SERVERS={"abra": {"command": "uv", "args": ["run", "python", "-m", "abra_mcp.server"], "transport": "stdio"}, "another": {"command": "npx", "args": ["another-mcp-server"], "transport": "stdio"}}
+```
+
+Each server config supports:
+- `command` - executable to run
+- `args` - command arguments (optional)
+- `transport` - `stdio` (default) or `streamable_http`
+- `env` - environment variables (optional)
+
 ## Requirements
 
 - Python 3.11+
 - OpenRouter API key (get one at [openrouter.ai](https://openrouter.ai))
+- ABRA Gen with API access enabled

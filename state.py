@@ -1,12 +1,12 @@
-"""State definitions for the chatbot conversation."""
+"""State definitions for the AI agent conversation."""
 
 from typing import Annotated
 from typing_extensions import TypedDict
 from langgraph.graph.message import add_messages
 
 
-class ChatState(TypedDict):
-    """State for the chatbot conversation.
+class AgentState(TypedDict):
+    """State for the AI agent conversation.
 
     Attributes:
         messages: List of conversation messages with automatic aggregation.
