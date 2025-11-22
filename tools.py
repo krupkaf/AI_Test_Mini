@@ -5,6 +5,7 @@ MCP servers are configured in .env via MCP_SERVERS JSON.
 """
 
 import logging
+import os
 from typing import Any
 
 from langchain_mcp_adapters.client import MultiServerMCPClient
@@ -15,6 +16,27 @@ logger = logging.getLogger(__name__)
 
 # Global MCP client instance
 _mcp_client: MultiServerMCPClient | None = None
+
+
+def _inject_env_vars(mcp_config: dict[str, Any]) -> dict[str, Any]:
+    """Inject ABRA_* environment variables into MCP server configs.
+
+    This ensures MCP subprocesses receive the necessary environment variables.
+    """
+    abra_vars = {k: v for k, v in os.environ.items() if k.startswith("ABRA_")}
+
+    if not abra_vars:
+        return mcp_config
+
+    for server_name, server_config in mcp_config.items():
+        if "env" not in server_config:
+            server_config["env"] = {}
+        # Add ABRA vars without overwriting existing
+        for key, value in abra_vars.items():
+            if key not in server_config["env"]:
+                server_config["env"][key] = value
+
+    return mcp_config
 
 
 def get_mcp_client() -> MultiServerMCPClient | None:
@@ -34,6 +56,9 @@ def get_mcp_client() -> MultiServerMCPClient | None:
     if not mcp_config:
         logger.info("No MCP servers configured")
         return None
+
+    # Inject environment variables for MCP subprocesses
+    mcp_config = _inject_env_vars(mcp_config)
 
     logger.info(f"Initializing MCP client with servers: {list(mcp_config.keys())}")
     _mcp_client = MultiServerMCPClient(mcp_config)

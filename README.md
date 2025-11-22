@@ -110,6 +110,30 @@ Each server config supports:
 - `transport` - `stdio` (default) or `streamable_http`
 - `env` - environment variables (optional)
 
+## Docker
+
+### Docker Compose (recommended)
+
+```bash
+docker compose up -d      # Build and start
+docker compose down       # Stop
+docker compose logs -f    # View logs
+```
+
+### Manual build and run
+
+```bash
+# Build
+docker build -t chatbot:latest .
+
+# Run
+docker run -d \
+  --name chatbot \
+  -p 8000:8000 \
+  --env-file .env \
+  chatbot:latest
+```
+
 ## Requirements
 
 - Python 3.11+
